@@ -27,3 +27,5 @@ wrangler publish
       - targets: ['themeparks-exporter-cloudflare-worker.<yourusername>.workers.dev:443']
     scheme: https
   ```
+## Demo
+* https://themeparks-exporter-cloudflare-worker.melvinto.workers.dev
