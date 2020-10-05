@@ -34,7 +34,7 @@ const header = "# HELP themeparks_waiting_time waiting time for configured theme
 
 function buildOutput(rides) {
   if (!rides)
-    return ""
+    return header + "\n";
 
   let lines = [];
   for (const ride of rides) {
