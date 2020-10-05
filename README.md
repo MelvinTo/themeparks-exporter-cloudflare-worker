@@ -15,6 +15,9 @@ wrangler login
 # publish
 wrangler publish
 ```
+* Configure
+  * The default park in the index.js file is Shanghai Disney
+  * You may change to other parks according to this repo: https://api.themeparks.wiki/preview/parks/
 * Test
   * Click the link in the output of wrangler publish. e.g. `https://themeparks-exporter-cloudflare-worker.<yourusername>.workers.dev`
     * Repalce yourusername with real username
