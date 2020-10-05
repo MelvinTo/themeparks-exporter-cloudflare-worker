@@ -1,15 +1,6 @@
-let latestRides = null;
-
-async function fetchWaitingTime() {
-  const url = "https://api.themeparks.wiki/preview/parks/ShanghaiDisneylandPark/waittime";
-  const init = {
-    headers: {
-      "content-type": "application/json;charset=UTF-8",
-    },
-  };
-  const response = await fetch(url, init);
-  return response;
-}
+const waittimeURL = "https://api.themeparks.wiki/preview/parks/ShanghaiDisneylandPark/waittime";
+const gaugeName = "themeparks_waiting_time";
+const header = "# HELP themeparks_waiting_time waiting time for configured themeparks\n# TYPE themeparks_waiting_time gauge";
 
 async function gatherResponse(response) {
   const { headers } = response
@@ -21,16 +12,27 @@ async function gatherResponse(response) {
   return null;
 }
 
-async function handleScheduled(event) {
-  const response = await fetchWaitingTime();
-  const rides = await gatherResponse(response);
-  if(rides) {
-    latestRides = rides;
-  }
-}
+async function handleRequest(event) {
+  const cacheKey = waittimeURL;
+  const cache = caches.default
 
-const gaugeName = "themeparks_waiting_time";
-const header = "# HELP themeparks_waiting_time waiting time for configured themeparks\n# TYPE themeparks_waiting_time gauge";
+  let response = await cache.match(cacheKey)
+
+  if (!response) {
+    //If not in cache, get it from origin
+    response = await fetch(waittimeURL)
+
+    // Must use Response constructor to inherit all of response's fields
+    response = new Response(response.body, response)
+
+    response.headers.append("Cache-Control", "max-age=300")
+
+    // Store the fetched response as cacheKey
+    // Use waitUntil so computational expensive tasks don"t delay the response
+    event.waitUntil(cache.put(cacheKey, response.clone()))
+  }
+  return response
+}
 
 function buildOutput(rides) {
   if (!rides)
@@ -53,22 +55,18 @@ function buildOutput(rides) {
   return `${header}\n${lines.join("\n")}`;
 }
 
+async function getResponse(event) {
+  const response = await handleRequest(event)
+  const lastRides = await response.json();
+  const output = buildOutput(lastRides);
+
+  return new Response(output, {
+    headers: {
+      "content-type": "text/plain; version=0.0.1; charset=utf-8"
+    }
+  })
+}
+
 addEventListener("fetch", event => {
-  if(!latestRides) {
-    event.waitUntil(handleScheduled())
-  }
-
-  const output = buildOutput(latestRides);
-
-  return event.respondWith(
-    new Response(output, {
-      headers: {
-        "content-type": "text/plain; version=0.0.1; charset=utf-8"
-      }
-    })
-  )
-});
-
-addEventListener("scheduled", event => {
-  event.waitUntil(handleScheduled(event))
+  return event.respondWith(getResponse(event));
 });
