@@ -17,3 +17,13 @@ wrangler publish
 ```
 * Test
   * Click the link in the output of wrangler publish. e.g. `https://themeparks-exporter-cloudflare-worker.<yourusername>.workers.dev`
+    * Repalce yourusername with real username
+* Add to Prometheus Server
+  * Add the following to the /etc/prometheus/prometheus.yml, and restart prometheus server
+    * Repalce yourusername with real username
+  ```
+  - job_name: themeparks-exporter
+    static_configs:
+      - targets: ['themeparks-exporter-cloudflare-worker.<yourusername>.workers.dev:443']
+    scheme: https
+  ```
